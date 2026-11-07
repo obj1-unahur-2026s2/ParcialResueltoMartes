@@ -94,6 +94,8 @@ class Fuente {
   const property monto
   var vigente = true
 
+  method vigente() = vigente
+
   method dejarDeEstarVigente() {
     vigente = false
   }
@@ -157,6 +159,8 @@ object universidad {
 
 object secretaria {
   const proyectos = []
+
+  method agregarProyectos(coleccionDeProyectos) { proyectos.addAll(coleccionDeProyectos) }
 
   method brechaTotal() = proyectos.sum({ proyecto => proyecto.brechaDeFinanciamiento() })
 

@@ -1,6 +1,5 @@
 import proyectosUniversitarios.*
 
-
 describe "1. Brecha de financiamiento" {
   const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
   const extension = new ProyectoDeExtension(duracionMeses = 12, presupuestoBase = 1000, director = director, comunidad = "Barrio Sur")
@@ -30,7 +29,7 @@ describe "1. Brecha de financiamiento" {
   }
 
   test "un proyecto de investigación sin equipos importados no tiene recargo" {
-    const investigacion = new ProyectoDeInvestigacion(duracionMeses = 12, presupuestoBase = 1000, director = director, area = areaComun)
+    const investigacion = new ProyectoDeInvestigacion(duracionMeses = 12, presupuestoBase = 1000, director = director, area = areaComun, cantidadEquiposImportados = 0)
     assert.equals(1000, investigacion.costoTotal())
   }
 
@@ -97,12 +96,12 @@ describe "3. Proyectos de excelencia" {
   }
 
   test "un proyecto de investigación estratégico de más de 24 meses es de excelencia" {
-    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 25, presupuestoBase = 100, director = noCalificado, area = estrategica)
+    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 25, presupuestoBase = 100, director = noCalificado, area = estrategica, cantidadEquiposImportados = 2)
     assert.that(proyecto.esDeExcelencia())
   }
 
   test "un proyecto de investigación de un área no estratégica no es de excelencia" {
-    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 36, presupuestoBase = 100, director = calificado, area = noEstrategica)
+    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 36, presupuestoBase = 100, director = calificado, area = noEstrategica, cantidadEquiposImportados = 2)
     assert.notThat(proyecto.esDeExcelencia())
   }
 }
@@ -151,6 +150,7 @@ describe "5. Secretaría de Ciencia y Técnica" {
   const financiado = new ProyectoDeExtension(duracionMeses = 24, presupuestoBase = 400, director = director, comunidad = "Barrio Este",
     fuentes = [new Fuente(tipo = "Convenio con un municipio", monto = 500)])
 
+  method initialize() { secretaria.agregarProyectos([investigacion, conBrecha, financiado])}
   test "la brecha total es la suma de las brechas de sus proyectos" {
     assert.equals(1500, secretaria.brechaTotal())
   }
