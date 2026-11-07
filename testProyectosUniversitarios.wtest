@@ -1,0 +1,181 @@
+import proyectosUniversitarios.*
+
+
+describe "1. Brecha de financiamiento" {
+  const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
+  const extension = new ProyectoDeExtension(duracionMeses = 12, presupuestoBase = 1000, director = director, comunidad = "Barrio Sur")
+  const areaComun = new Area(nombre = "Historia", esEstrategica = false)
+
+  test "un proyecto de extensión sin fuentes vigentes tiene brecha igual a su presupuesto" {
+    extension.agregarFuente(new Fuente(tipo = "Subsidio nacional", monto = 300, vigente = false))
+    assert.equals(1000, extension.brechaDeFinanciamiento())
+    assert.notThat(extension.estaFinanciado())
+  }
+
+  test "un proyecto de extensión con 2 fuentes vigentes resta sus montos" {
+    extension.agregarFuente(new Fuente(tipo = "Subsidio nacional", monto = 300))
+    extension.agregarFuente(new Fuente(tipo = "Donación de graduados", monto = 200))
+    assert.equals(500, extension.brechaDeFinanciamiento())
+  }
+
+  test "un proyecto con fondos de sobra tiene brecha cero y está financiado" {
+    extension.agregarFuente(new Fuente(tipo = "Convenio con un municipio", monto = 1500))
+    assert.equals(0, extension.brechaDeFinanciamiento())
+    assert.that(extension.estaFinanciado())
+  }
+
+  test "un proyecto de investigación con equipos importados tiene recargo del 20%" {
+    const investigacion = new ProyectoDeInvestigacion(duracionMeses = 12, presupuestoBase = 1000, director = director, area = areaComun, cantidadEquiposImportados = 2)
+    assert.equals(1200, investigacion.costoTotal())
+  }
+
+  test "un proyecto de investigación sin equipos importados no tiene recargo" {
+    const investigacion = new ProyectoDeInvestigacion(duracionMeses = 12, presupuestoBase = 1000, director = director, area = areaComun)
+    assert.equals(1000, investigacion.costoTotal())
+  }
+
+  test "si una fuente deja de estar vigente la brecha aumenta" {
+    const fuente = new Fuente(tipo = "Aporte de la cooperadora", monto = 400)
+    extension.agregarFuente(fuente)
+    assert.equals(600, extension.brechaDeFinanciamiento())
+    fuente.dejarDeEstarVigente()
+    assert.equals(1000, extension.brechaDeFinanciamiento())
+  }
+}
+
+describe "2. Directores altamente calificados" {
+  test "un titular con dedicación exclusiva y 4 proyectos es altamente calificado" {
+    const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 1, cargo = profesorTitular)
+    assert.that(director.altamenteCalificado())
+  }
+
+  test "un titular sin dedicación exclusiva no es altamente calificado" {
+    const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = false, aniosAntiguedad = 10, cargo = profesorTitular)
+    assert.notThat(director.altamenteCalificado())
+  }
+
+  test "un adjunto con menos de 5 años de antigüedad no es calificado aunque haya dirigido muchos proyectos" {
+    const director = new Director(proyectosDirigidos = 10, dedicacionExclusiva = true, aniosAntiguedad = 4, cargo = profesorAdjunto)
+    assert.notThat(director.altamenteCalificado())
+  }
+
+  test "un jefe de trabajos prácticos con más de 3 proyectos es siempre calificado" {
+    const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = false, aniosAntiguedad = 0, cargo = jefeDeTrabajosPracticos)
+    assert.that(director.altamenteCalificado())
+  }
+
+  test "con 3 proyectos dirigidos o menos no es calificado" {
+    const director = new Director(proyectosDirigidos = 3, dedicacionExclusiva = false, aniosAntiguedad = 0, cargo = jefeDeTrabajosPracticos)
+    assert.notThat(director.altamenteCalificado())
+  }
+
+  test "cambiar el cargo de un director modifica su calificación" {
+    const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = false, aniosAntiguedad = 2, cargo = jefeDeTrabajosPracticos)
+    director.cambiarCargo()
+    assert.equals(profesorAdjunto, director.cargo())
+    assert.notThat(director.altamenteCalificado())
+  }
+
+  test "los cargos ascienden hasta titular y ahí se quedan" {
+    const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 2, cargo = profesorAdjunto)
+    director.cambiarCargo()
+    assert.equals(profesorTitular, director.cargo())
+    director.cambiarCargo()
+    assert.equals(profesorTitular, director.cargo())
+  }
+
+  test "no se puede crear un director con un cargo inválido" {
+    assert.throwsException({ new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 2, cargo = "decano") })
+  }
+}
+
+describe "3. Proyectos de excelencia" {
+  const calificado = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
+  const noCalificado = new Director(proyectosDirigidos = 1, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
+  const estrategica = new Area(nombre = "Energía", esEstrategica = true)
+  const noEstrategica = new Area(nombre = "Historia", esEstrategica = false)
+
+  test "un proyecto de extensión de más de 12 meses con director calificado es de excelencia" {
+    const proyecto = new ProyectoDeExtension(duracionMeses = 13, presupuestoBase = 100, director = calificado, comunidad = "Barrio Sur")
+    assert.that(proyecto.esDeExcelencia())
+  }
+
+  test "un proyecto de extensión con director no calificado no es de excelencia" {
+    const proyecto = new ProyectoDeExtension(duracionMeses = 13, presupuestoBase = 100, director = noCalificado, comunidad = "Barrio Sur")
+    assert.notThat(proyecto.esDeExcelencia())
+  }
+
+  test "un proyecto de investigación estratégico de más de 24 meses es de excelencia" {
+    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 25, presupuestoBase = 100, director = noCalificado, area = estrategica)
+    assert.that(proyecto.esDeExcelencia())
+  }
+
+  test "un proyecto de investigación de un área no estratégica no es de excelencia" {
+    const proyecto = new ProyectoDeInvestigacion(duracionMeses = 36, presupuestoBase = 100, director = calificado, area = noEstrategica)
+    assert.notThat(proyecto.esDeExcelencia())
+  }
+}
+
+describe "4. Proyectos comunitarios" {
+  const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
+  const actividades = ["Taller", "Feria", "Censo", "Jornada"].map({ nombre => new Actividad(nombre = nombre) })
+  const comunitario = new ProyectoComunitario(duracionMeses = 18, presupuestoBase = 1000, director = director, comunidad = "Barrio Norte", actividades = actividades, cantidadOrganizaciones = 6)
+
+  method agregarTresFuentes() {
+    comunitario.agregarFuente(new Fuente(tipo = "Subsidio nacional", monto = 100))
+    comunitario.agregarFuente(new Fuente(tipo = "Convenio con un municipio", monto = 100))
+    comunitario.agregarFuente(new Fuente(tipo = "Donación de graduados", monto = 100))
+  }
+
+  test "un comunitario que cumple todas las condiciones es de excelencia y tiene recargo del 5%" {
+    self.agregarTresFuentes()
+    assert.that(comunitario.esDeExcelencia())
+    assert.equals(1050, comunitario.costoTotal())
+    assert.equals(750, comunitario.brechaDeFinanciamiento())
+  }
+
+  test "un comunitario con menos de 3 fuentes vigentes no es de excelencia ni tiene recargo" {
+    comunitario.agregarFuente(new Fuente(tipo = "Subsidio nacional", monto = 100))
+    assert.notThat(comunitario.esDeExcelencia())
+    assert.equals(1000, comunitario.costoTotal())
+  }
+
+  test "un comunitario que articula con pocas organizaciones no es de excelencia" {
+    const proyecto = new ProyectoComunitario(duracionMeses = 18, presupuestoBase = 1000, director = director, comunidad = "Barrio Norte", actividades = actividades, cantidadOrganizaciones = 5)
+    assert.notThat(proyecto.esDeExcelencia())
+  }
+
+  test "un comunitario con menos de 4 actividades no es de excelencia" {
+    const proyecto = new ProyectoComunitario(duracionMeses = 18, presupuestoBase = 1000, director = director, comunidad = "Barrio Norte", actividades = actividades.take(3), cantidadOrganizaciones = 6)
+    assert.notThat(proyecto.esDeExcelencia())
+  }
+}
+
+describe "5. Secretaría de Ciencia y Técnica" {
+  const director = new Director(proyectosDirigidos = 4, dedicacionExclusiva = true, aniosAntiguedad = 10, cargo = profesorTitular)
+  const estrategica = new Area(nombre = "Energía", esEstrategica = true)
+  // Brecha 1200 (sin fuentes, con recargo del 20%)
+  const investigacion = new ProyectoDeInvestigacion(duracionMeses = 30, presupuestoBase = 1000, director = director, area = estrategica, cantidadEquiposImportados = 1)
+  // Brecha 300
+  const conBrecha = new ProyectoDeExtension(duracionMeses = 6, presupuestoBase = 500, director = director, comunidad = "Barrio Sur",
+    fuentes = [new Fuente(tipo = "Subsidio nacional", monto = 200)])
+  // Financiado
+  const financiado = new ProyectoDeExtension(duracionMeses = 24, presupuestoBase = 400, director = director, comunidad = "Barrio Este",
+    fuentes = [new Fuente(tipo = "Convenio con un municipio", monto = 500)])
+  const secretaria = new Secretaria(proyectos = [investigacion, conBrecha, financiado])
+
+  test "la brecha total es la suma de las brechas de sus proyectos" {
+    assert.equals(1500, secretaria.brechaTotal())
+  }
+
+  test "conoce los proyectos que no están completamente financiados" {
+    assert.equals(#{investigacion, conBrecha}, secretaria.proyectosSinFinanciamientoCompleto().asSet())
+  }
+
+  test "al sacar de vigencia todas las fuentes, ningún proyecto queda financiado" {
+    secretaria.sacarDeVigenciaTodasLasFuentes()
+    assert.that(secretaria.proyectos().all({ proyecto => proyecto.fuentesVigentes().isEmpty() }))
+    assert.equals(1200 + 500 + 400, secretaria.brechaTotal())
+    assert.equals(#{investigacion, conBrecha, financiado}, secretaria.proyectosSinFinanciamientoCompleto().asSet())
+  }
+}
