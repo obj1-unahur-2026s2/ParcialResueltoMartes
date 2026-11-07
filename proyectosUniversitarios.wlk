@@ -15,10 +15,10 @@
 
 // Clase abstracta: no puede instanciarse un proyecto sin orientación
 class Proyecto {
-  const property duracionMeses
-  const property presupuestoBase
-  const property fuentes = []
-  var property director
+  const duracionMeses
+  const presupuestoBase
+  const fuentes = []
+  const director
 
   method agregarFuente(fuente) {
     fuentes.add(fuente)
@@ -44,8 +44,8 @@ class Proyecto {
 }
 
 class ProyectoDeInvestigacion inherits Proyecto {
-  const property area
-  const property cantidadEquiposImportados = 0
+  const area
+  const cantidadEquiposImportados
 
   override method recargo() =
     if (cantidadEquiposImportados > 0) presupuestoBase * 0.2 else 0
@@ -54,8 +54,8 @@ class ProyectoDeInvestigacion inherits Proyecto {
 }
 
 class ProyectoDeExtension inherits Proyecto {
-  const property comunidad
-  const property actividades = []
+  const comunidad
+  const actividades = []
 
   override method recargo() = 0
 
@@ -64,7 +64,7 @@ class ProyectoDeExtension inherits Proyecto {
 }
 
 class ProyectoComunitario inherits ProyectoDeExtension {
-  const property cantidadOrganizaciones
+  const cantidadOrganizaciones
 
   override method esDeExcelencia() =
     super() &&
@@ -77,12 +77,12 @@ class ProyectoComunitario inherits ProyectoDeExtension {
 }
 
 class Area {
-  const property nombre
+  const nombre
   const property esEstrategica
 }
 
 class Actividad {
-  const property nombre
+  const nombre
 }
 
 // ---------------------------------------------------------------
@@ -90,12 +90,16 @@ class Actividad {
 // ---------------------------------------------------------------
 
 class Fuente {
-  const property tipo
+  const tipo
   const property monto
-  var property vigente = true
+  var vigente = true
 
   method dejarDeEstarVigente() {
     vigente = false
+  }
+
+  method ponerEnVigencia() {
+    vigente = true
   }
 }
 
@@ -104,16 +108,14 @@ class Fuente {
 // ---------------------------------------------------------------
 
 class Director {
-  var property proyectosDirigidos
-  var property dedicacionExclusiva
-  var property aniosAntiguedad
+  const proyectosDirigidos
+  const property dedicacionExclusiva
+  const property aniosAntiguedad
   var cargo
 
   method initialize() {
     self.validarCargo(cargo)
   }
-
-  method cargo() = cargo
 
   method validarCargo(unCargo) {
     if (!universidad.esCargoValido(unCargo))
@@ -144,7 +146,7 @@ object jefeDeTrabajosPracticos {
 }
 
 object universidad {
-  const property cargosValidos = [profesorTitular, profesorAdjunto, jefeDeTrabajosPracticos]
+  const cargosValidos = [profesorTitular, profesorAdjunto, jefeDeTrabajosPracticos]
 
   method esCargoValido(cargo) = cargosValidos.contains(cargo)
 }
@@ -153,12 +155,8 @@ object universidad {
 // Secretaría de Ciencia y Técnica
 // ---------------------------------------------------------------
 
-class Secretaria {
-  const property proyectos = []
-
-  method agregarProyecto(proyecto) {
-    proyectos.add(proyecto)
-  }
+object secretaria {
+  const proyectos = []
 
   method brechaTotal() = proyectos.sum({ proyecto => proyecto.brechaDeFinanciamiento() })
 
